@@ -8,26 +8,32 @@ import sys
 
 from os.path import dirname, join, getmtime,exists
 
+
+
 class WeatherForecast():
     def date(self):
+        global item
+        self.date_input = date_input
         print("Input a date 'YYYY-MM-DD' in order to check precipitation: ")
         date_input = input("Input 'ok' if you want to check the today forecast or 'select' if you want to check a date: ")
         if date_input == 'ok':
             date = dt.date.today() + dt.timedelta(1)
-            date_format = date.strftime('%Y-%m-%d')
-            print(f"Checking for tomorrow date: {date_format}")
-            return date_format
+            item = date.strftime('%Y-%m-%d')
+            print(f"Checking for tomorrow date: {item}")
+            return item
         elif not date_input:
             sys.exit()
-        #if date input == select:
-        else:
+        if date_input == 'select':
             try:
                 date_input = dt.datetime.strptime(date_input, '%Y-%m-%d' )
-                date_format = date_input.strftime ('%Y-%m-%d')
-                return date_format
+                item = date_input.strftime ('%Y-%m-%d')
+                return item
             except ValueError:
                 print("invalid date input")
                 sys.exit()
+    
+    def __int__(self):
+        return item
 
     def weather(self, search_date):
         latitude, longitude = 51.5085, 0.1257
@@ -36,6 +42,7 @@ class WeatherForecast():
         return response.text
     
     def weather_cached(self, search_date):
+        global precipitation_sum
         use_cache = True
         file_path = join('cache', search_date)
         if not exists(file_path):
@@ -47,7 +54,11 @@ class WeatherForecast():
             with open(file_path) as file:
                 precipitation = json.load(file)
                 precipitation_sum = float(precipitation["daily"]["precipitation_sum"][0])
-                return precipitation_sum
+                if precipitation_sum <= 0:
+                    return "it will rain"
+                elif precipitation_sum > 0:
+                    return "it will not rain"
+        
 
         weather_txt = self.weather(search_date)
 
@@ -57,7 +68,7 @@ class WeatherForecast():
             precipitation = json.loads(search_date)
             precipitation_sum = float(precipitation["daily"]["precipitation_sum"][0])
             return precipitation_sum
-        
+            
     def __getitem__(self, item):
         try:
 
@@ -67,18 +78,19 @@ class WeatherForecast():
 
             return None
         
-    def __setitem__(self, key, value):
-        pass
+    def __setitem__(self, item):
+        wf[item] = self.weather_cached
+
+    def __iter__(self):
+        for item in wf:
+            yield item
+
+    def __items__(self, item):
+        for item, self.weather_cached in wf:
+            print(item, self.weather_cached)
 
 wf = WeatherForecast()
 
-print(wf['2023-09-05'])
-
-#for file in listdir('cache'):
-    #print(file)
-
-
-
-
+print(wf["2023-09-10"])
 
 
